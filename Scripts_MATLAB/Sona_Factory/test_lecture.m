@@ -1,0 +1,12 @@
+[signal,f_echantillonnage] = audioread('C:\Users\Hatem\Documents\Paul\Scripts_MATLAB\Audio\Slices\slice1.wav');
+player = audioplayer(signal,f_echantillonnage);
+play(player);
+[signal,f_echantillonnage] = audioread('C:\Users\Hatem\Documents\Paul\Scripts_MATLAB\Audio\Slices\slice2.wav');
+stop(player);
+player = audioplayer(signal,f_echantillonnage/2);
+play(player);
+pause(1);
+[signal,f_echantillonnage] = audioread('C:\Users\Hatem\Documents\Paul\Scripts_MATLAB\Audio\Slices\slice3.wav');
+stop(player);
+player = audioplayer(signal,f_echantillonnage/3);
+play(player);
