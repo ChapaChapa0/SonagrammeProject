@@ -7,29 +7,29 @@ import sys
 print("Environment Ready")
 
 # FUNCTIONS
-def calcul_LS(depth0, pas, sigma, seuil):
+def calcul_LS(depth0, step, sigma, threshold):
     
-    LS = depth0[0:-1:pas][0:-1:pas]
-    condition = np.where(depth0 > seuil)
+    LS = depth0[0:-1:step][0:-1:step]
+    condition = np.where(LS > threshold)
     LS[condition] = 0
     return LS
 
 
 # MAIN
 # Parameters
-window_w = [261,390]
-window_h = [101, 480]
+window_w = [260,390]
+window_h = [100, 480]
 nb_fs = 3
-pas = 2;
-sigma = 1.5;
-seuil = 550;
+step = 2         # Amount of downsampling on LS
+sigma = 1.5      # Amount of blureness on LS
+threshold = 550  # Seuil for LS computing
 
 # Realsense camera parameter
 len_im = 640
 wid_im = 480
 exp = 8000
 gain = 16
-dis_shift = 0;
+dis_shift = 0
 
 # INIT
 # Adjust exposure and gain
@@ -59,35 +59,26 @@ for i in range (0,5):
     frameset = pipe.wait_for_frames()
 
 # LOOP
-condition = True
 iteration = 0
 old_i = 0
 LS_base = []
-while iteration < 15:
+while iteration < 10:
     
     raw_input("Press enter...")
     
-    for i in range (0,nb_fs):
-        frameset = pipe.wait_for_frames()
+    frameset = pipe.wait_for_frames()
 
-    # Get arrays of color data
-    color_frame = frameset.get_color()  
-    color = np.asanyarray(color_frame.get_data())
-    
-    if True:
-        # Get arrays of depth data
-        depth_frame = frameset.get_depth_frame()
-        depth = np.asanyarray(depth_frame.get_data()).astype(np.uint16)
+    # Get arrays of depth data
+    depth_frame = frameset.get_depth_frame()
+    depth = np.asanyarray(depth_frame.get_data()).astype(np.uint16)
 
-        # Compute LS
-        depth0 = np.transpose(depth[window_h[0]: window_h[1]])
-        depth0 = np.transpose(depth0[window_w[0]:window_w[1]])
-        LS = calcul_LS(depth0, pas, sigma, seuil)
-        LS_base.append(LS)
+    # Compute LS
+    depth0 = np.transpose(depth[window_h[0]: window_h[1]])
+    depth0 = np.transpose(depth0[window_w[0]:window_w[1]])
+    LS = calcul_LS(depth0, step, sigma, threshold)
+    LS_base.append(LS)
     
-        iteration = iteration + 1
-    else:
-        condition = False
+    iteration = iteration + 1
 
 
 pipe.stop()
