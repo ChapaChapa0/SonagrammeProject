@@ -3,6 +3,7 @@ import cv2                                # state of the art computer vision alg
 import numpy as np                        # fundamental package for scientific computing
 import pyrealsense2 as rs                 # Intel RealSense cross-platform open-source API
 import time
+import math
 import sys
 print("Environment Ready")
 
@@ -17,6 +18,7 @@ def calcul_LS(depth0, step, sigma, threshold):
 
 # MAIN
 # Parameters
+repertory = 'C:\Users\Hatem\Documents\Paul\SonagrammeProject\Scripts_PYTHON\Audio\'
 window_w = [260,390]
 window_h = [100, 480]
 nb_fs = 3
@@ -62,7 +64,7 @@ for i in range (0,5):
 iteration = 0
 old_i = 0
 LS_base = []
-while iteration < 10:
+while iteration < 30:
     
     raw_input("Press enter...")
     
@@ -80,7 +82,50 @@ while iteration < 10:
     
     iteration = iteration + 1
 
+AS_base = []
+AE_base = []
+audio_path = repertory + 'empreintes.wav'
 
+# Open the wav file in read-only mode
+signal = wave.open(audio_path,"rb")
+
+# Audio parameters
+nb_channels = signal.getnchannels()
+width = signal.getsampwidth()
+framerate = signal.getframerate()
+
+nb_LS = len(LS_base)
+size_slice = math.floor(len(signal) / (nb_LS - 1))
+
+
+for i in range (0,len(LS_base)):
+    # Save slice file
+    slice_signal = signal[i * size_slice : -1]
+    slice_path = repertory + 'Slices\slice' + str(i) + '.wav'
+    AS_base.append(slice_path)
+    slice_file = wave.open(slice_path, 'wb')
+    slice_file.setnchannels(nb_channels)
+    slice_file.setsampwidth(width)
+    slice_file.setframerate(framerate)
+    slice_file.writeframes(slice_signal)
+    slice_file.close()
+    
+    # Save slice file in reverse
+    eclis_signal = signal[0 : i * size_slice].reverse
+    ecils_path = repertory + 'Secils\ecils' + str(i) + '.wav'
+    AE_base.append(ecils_path)
+    ecils_file = wave.open(ecils_path, 'wb')
+    ecils_file.setnchannels(nb_channels)
+    ecils_file.setsampwidth(width)
+    ecils_file.setframerate(framerate)
+    ecils_file.writeframes(ecils_signal)
+    ecils_file.close()
+
+
+# Close signal stream
+signal.close()
+
+# Close streaming pipe
 pipe.stop()
 
 

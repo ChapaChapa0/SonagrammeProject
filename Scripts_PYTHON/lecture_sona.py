@@ -22,7 +22,7 @@ def calcul_LS(depth0, step, sigma, seuil):
 def compare_LS(LS_base, LS0):
     i_min = 0
     score_min = 10000
-    for i in range(1,len(LS_base)):
+    for i in range(0,len(LS_base)):
         LS = LS_base[i]
         masque = np.abs(LS - LS0)
         score = np.mean(masque)
@@ -39,7 +39,7 @@ window_h = [100, 480]
 step = 2         # Amount of downsampling on LS
 sigma = 1.5      # Amount of blureness on LS
 threshold = 550  # Seuil for LS computing
-delay_time = 0.4 # Time between each iteration
+delay_time = 0.2 # Time between each iteration
 
 # Realsense camera parameter
 len_im = 640
@@ -91,8 +91,7 @@ width = wave_file.getsampwidth()
 framerate = wave_file.getframerate()
 nb_frames = wave_file.getnframes()
 duree_son = float(nb_frames) / float(framerate)
-#duree_LS = duree_son / (len(base_LS) - 1)
-duree_LS = 0.2
+duree_LS = duree_son / (len(LS_base) - 1)
 
 # Init data flow block
 chunk_size = int(math.ceil(framerate * delay_time))
@@ -102,6 +101,9 @@ stream = p.open(format = file_format,
                 channels = nb_channels,
                 rate = framerate,
                 output = True)
+
+raw_input("Press enter...")
+time.sleep(2)
 
 # Read data
 data = wave_file.readframes(chunk_size)
@@ -114,9 +116,8 @@ new_fr = framerate
 # LOOP
 iteration = 0
 old_i = 0
+
 while len(data) > 0:
-    
-    raw_input("Press enter...")
     
     start = time.time()
     
@@ -140,11 +141,14 @@ while len(data) > 0:
     # Deduce new speed and chunk_size from LS
     if old_i < i_min:
         speed = ((i_min - old_i) * duree_LS) / delay_time
+        chunk_size = int(math.ceil(framerate * delay_time * speed))
         data = wave_file.readframes(chunk_size)
     else:
         speed = 1
-    chunk_size = int(math.ceil(framerate * delay_time * speed))
-    
+        chunk_size = int(math.ceil(framerate * delay_time * speed))
+        if i_min == (len(LS_base)-1):
+            data = ""
+
     # Sleep
     end = time.time()
     computing_time = start - end
