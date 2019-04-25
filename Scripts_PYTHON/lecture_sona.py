@@ -8,53 +8,41 @@ import wave
 import audioop
 import sys
 import math
-from threading import Thread
+import pickle
+from LS_f import calcul_LS
+from LS_f import compare_LS
 print("Environment Ready")
-
-# FUNCTIONS
-def calcul_LS(depth0, step, sigma, seuil):
     
-    LS = depth0[0:-1:step][0:-1:step]
-    condition = np.where(LS > threshold)
-    LS[condition] = 0
-    return LS
-
-def compare_LS(LS_base, LS0):
-    i_min = 0
-    score_min = 10000
-    for i in range(0,len(LS_base)):
-        LS = LS_base[i]
-        masque = np.abs(LS - LS0)
-        score = np.mean(masque)
-        if score < score_min:
-            score_min = score
-            i_min = i
-    return [i_min,score_min]
-        
 
 # MAIN
 # Parameters
-window_w = [260,390]
-window_h = [100, 480]
-step = 2         # Amount of downsampling on LS
-sigma = 1.5      # Amount of blureness on LS
-threshold = 550  # Seuil for LS computing
-delay_time = 0.2 # Time between each iteration
+f = open("slices_base", "r")
+p = pickle.load(f)
+repertory = p[0]
+window_w = p[1]
+window_h = p[2]
+step_downsample = p[3]  # Step for downsampling on LS
+sigma = p[4]            # Amount of blur on LS
+threshold = p[5]        # Threshold to compute LS
+delay_time = 0.2        # Time between each iteration
 
 # Realsense camera parameter
-len_im = 640
-wid_im = 480
-exp = 8000
-gain = 16
-dis_shift = 0
+len_im = p[6]
+wid_im = p[7]
+exp = p[8]
+gain = p[9]
+dis_shift = p[10]
+
+# Load bases
+LS_base = p[11]
+AS_base = p[12]
+AE_base = p[13]
+
+# Close parameters file
+f.close()
+
 
 # INIT CAMERA
-# Parameters
-len_im = 640
-wid_im = 480
-exp = 8000
-gain = 16
-
 # Adjust exposure and gain
 ctx = rs.context()
 devices = ctx.query_devices()
@@ -65,7 +53,7 @@ for dev in devices:
             emit = sens.get_option(rs.option.emitter_enabled); # Get emitter status
             sens.set_option(rs.option.exposure, exp); # Set exposure
             sens.set_option(rs.option.gain, gain) # Set gain
-            sens.set_option(rs.option.emitter_enabled, 0) # Disable emitter
+            sens.set_option(rs.option.emitter_enabled, dis_shift) # Disable emitter
 pipe = rs.pipeline()
 config = rs.config()
 config.enable_stream(rs.stream.color, len_im, wid_im, rs.format.rgb8, 30) #1280 * 720 ou 640 * 480
@@ -78,7 +66,7 @@ for i in range (0,5):
 
 # INIT AUDIO
 # Audio path
-audio_path = 'C:\Users\Hatem\Documents\Paul\SonagrammeProject\Scripts_MATLAB\Audio\empreintes_2.wav'
+audio_path = repertory + 'empreintes.wav'
 
 # Open the wav file in read-only mode
 wave_file = wave.open(audio_path,"rb")
@@ -93,32 +81,31 @@ nb_frames = wave_file.getnframes()
 duree_son = float(nb_frames) / float(framerate)
 duree_LS = duree_son / (len(LS_base) - 1)
 
-# Init data flow block
-chunk_size = int(math.ceil(framerate * delay_time))
-
 # Open the data stream
 stream = p.open(format = file_format,
                 channels = nb_channels,
                 rate = framerate,
                 output = True)
 
+
+# Init acceleration parameters
+speed = 1.0
+new_fr = framerate
+
+# Init data flow block
+chunk_size = int(math.ceil(framerate * delay_time))
+data = "init"
+
+# LOOP
+old_i = -1
+reverse = False
+
+# Pause
 raw_input("Press enter...")
 time.sleep(2)
 
-# Read data
-data = wave_file.readframes(chunk_size)
-stream.write(data)
-
-# Init acceleration parameters
-speed = 1
-new_fr = framerate
-
-# LOOP
-iteration = 0
-old_i = 0
-
 while len(data) > 0:
-    
+
     start = time.time()
     
     # Get new frames
@@ -127,27 +114,46 @@ while len(data) > 0:
     # Get arrays of depth data
     depth_frame = frameset.get_depth_frame()
     depth = np.asanyarray(depth_frame.get_data()).astype(np.uint16)
-        
+
     # Compute LS
     depth0 = np.transpose(depth[window_h[0]: window_h[1]])
     depth0 = np.transpose(depth0[window_w[0]:window_w[1]])
-    LS = calcul_LS(depth0, step, sigma, threshold)
+    LS = calcul_LS(depth0, step_downsample, sigma, threshold)
         
     # Compare LS with our base of LS
     res = compare_LS(LS_base, LS)
     i_min = res[0]
     score_min = res[1]
-        
-    # Deduce new speed and chunk_size from LS
-    if old_i < i_min:
-        speed = ((i_min - old_i) * duree_LS) / delay_time
+
+    # Deduce if lecture is over
+    if (i_min == (len(LS_base) - 1) and not reverse) or (i_min == 0 and reverse):
+        data = ""
+    # Repeat last buffer if same LS found
+    elif old_i == i_min:
+        speed = 1.0
+        chunk_size = int(math.ceil(framerate * delay_time * speed))
+    # Else continue lecture
+    else:
+        # Read new file if it's 1st iteration or if reverse and change of direction
+        if (old_i == -1) or (old_i < i_min and reverse):
+            reverse = False
+            audio_path = repertory + 'Slices\\slice' + i_min + '.wav'
+            wave_file.close()
+            wave_file = wave.open(audio_path,"rb")
+            speed = 1.0
+        # Read new file if not reverse and change of direction
+        elif old_i > i_min and not reverse:
+            reverse = True
+            audio_path = repertory + 'Secils\\ecils' + i_min + '.wav'
+            wave_file.close()
+            wave_file = wave.open(audio_path,"rb")
+            speed = 1.0
+        # Else no change of file
+        else:
+            speed = ((i_min - old_i) * duree_LS) / delay_time
+            
         chunk_size = int(math.ceil(framerate * delay_time * speed))
         data = wave_file.readframes(chunk_size)
-    else:
-        speed = 1
-        chunk_size = int(math.ceil(framerate * delay_time * speed))
-        if i_min == (len(LS_base)-1):
-            data = ""
 
     # Sleep
     end = time.time()
@@ -161,7 +167,6 @@ while len(data) > 0:
     stream.write(modified_data)
     
     old_i = i_min
-    iteration += 1
     
 # Stop data flow
 stream.stop_stream()
@@ -169,6 +174,9 @@ stream.close()
 
 # Close PyAudio
 p.terminate()
+
+# Close file stream
+wave_file.close()
 
 # Close streaming pipe
 pipe.stop()

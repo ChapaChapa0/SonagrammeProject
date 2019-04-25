@@ -3,28 +3,22 @@ import cv2                                # state of the art computer vision alg
 import numpy as np                        # fundamental package for scientific computing
 import pyrealsense2 as rs                 # Intel RealSense cross-platform open-source API
 import time
+import wave
 import math
 import sys
+import pickle
+from LS_f import calcul_LS
 print("Environment Ready")
-
-# FUNCTIONS
-def calcul_LS(depth0, step, sigma, threshold):
-    
-    LS = depth0[0:-1:step][0:-1:step]
-    condition = np.where(LS > threshold)
-    LS[condition] = 0
-    return LS
 
 
 # MAIN
 # Parameters
-repertory = 'C:\Users\Hatem\Documents\Paul\SonagrammeProject\Scripts_PYTHON\Audio\'
+repertory = "C:\\Users\\Hatem\\Documents\\Paul\\SonagrammeProject\\Scripts_PYTHON\\Audio\\"
 window_w = [260,390]
 window_h = [100, 480]
-nb_fs = 3
-step = 2         # Amount of downsampling on LS
-sigma = 1.5      # Amount of blureness on LS
-threshold = 550  # Seuil for LS computing
+step_downsample = 2  # Step for downsampling on LS
+sigma = 1.5          # Amount of blur on LS
+threshold = 550      # Threshold to compute LS
 
 # Realsense camera parameter
 len_im = 640
@@ -77,7 +71,7 @@ while iteration < 30:
     # Compute LS
     depth0 = np.transpose(depth[window_h[0]: window_h[1]])
     depth0 = np.transpose(depth0[window_w[0]:window_w[1]])
-    LS = calcul_LS(depth0, step, sigma, threshold)
+    LS = calcul_LS(depth0, step_downsample, sigma, threshold)
     LS_base.append(LS)
     
     iteration = iteration + 1
@@ -99,9 +93,10 @@ size_slice = math.floor(len(signal) / (nb_LS - 1))
 
 
 for i in range (0,len(LS_base)):
+    
     # Save slice file
     slice_signal = signal[i * size_slice : -1]
-    slice_path = repertory + 'Slices\slice' + str(i) + '.wav'
+    slice_path = repertory + 'Slices\\slice' + str(i) + '.wav'
     AS_base.append(slice_path)
     slice_file = wave.open(slice_path, 'wb')
     slice_file.setnchannels(nb_channels)
@@ -111,8 +106,8 @@ for i in range (0,len(LS_base)):
     slice_file.close()
     
     # Save slice file in reverse
-    eclis_signal = signal[0 : i * size_slice].reverse
-    ecils_path = repertory + 'Secils\ecils' + str(i) + '.wav'
+    ecils_signal = signal[0 : i * size_slice].reverse
+    ecils_path = repertory + 'Secils\\ecils' + str(i) + '.wav'
     AE_base.append(ecils_path)
     ecils_file = wave.open(ecils_path, 'wb')
     ecils_file.setnchannels(nb_channels)
@@ -128,11 +123,12 @@ signal.close()
 # Close streaming pipe
 pipe.stop()
 
-
-#config = {'len_im', 'wid_im', 'window_w', 'window_h', 'nb_bandes', 'exp', 'gain'}
-#p=open("slices_base", "w") # le fichier de sauvegarde s'appelle “f”
-#pickle.dump(config, p)
-#p.close()
+# Save configuration for lecture
+config = [repertory, window_w, window_h, step_downsample, sigma, threshold,
+          len_im, wid_im, exp,gain, dis_shift, LS_base, AS_base, AE_base]
+f = open("slices_base", "w")
+pickle.dump(config, f)
+f.close()
     
     
     
