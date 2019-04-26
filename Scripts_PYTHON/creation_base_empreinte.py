@@ -7,7 +7,8 @@ import wave
 import math
 import sys
 import pickle
-from LS_f import calcul_LS
+from empreinte_f import calcul_empreinte
+from empreinte_f import calcul_empreinte_global
 print("Environment Ready")
 
 
@@ -57,8 +58,8 @@ for i in range (0,5):
 # LOOP
 iteration = 0
 old_i = 0
-LS_base = []
-while iteration < 3:
+base_empreinte = []
+while iteration < 5:
 
     raw_input("Press enter...")
     
@@ -71,20 +72,23 @@ while iteration < 3:
     # Compute LS
     depth0 = np.transpose(depth[window_h[0]: window_h[1]])
     depth0 = np.transpose(depth0[window_w[0]:window_w[1]])
-    LS = calcul_LS(depth0, step_downsample, sigma, threshold)
-    LS_base.append(LS)
+    empreinte = calcul_empreinte(depth0, step_downsample, sigma, threshold)
+    base_empreinte.append(empreinte)
 
     iteration = iteration + 1
+    
+# Calcul empreinte global
+empreinte_global = calcul_empreinte_global(base_empreinte, step_downsample, sigma, threshold)
 
 # Close streaming pipe
 pipe.stop()
 
 # Save configuration for lecture
-#config = [repertory, window_w, window_h, step_downsample, sigma, threshold,
-#          len_im, wid_im, exp,gain, dis_shift, LS_base]
-#f = open("slices_base", "w")
-#pickle.dump(config, f)
-#f.close()
+config = [repertory, window_w, window_h, step_downsample, sigma, threshold,
+          len_im, wid_im, exp,gain, dis_shift, empreinte_global]
+f = open("slices_base", "w")
+pickle.dump(config, f)
+f.close()
     
     
     
