@@ -33,10 +33,8 @@ exp = p[8]
 gain = p[9]
 dis_shift = p[10]
 
-# Load bases
+# Load LS base
 LS_base = p[11]
-AS_base = p[12]
-AE_base = p[13]
 
 # Close parameters file
 f.close()
@@ -137,18 +135,15 @@ while len(data) > 0:
         # Read new file if it's 1st iteration or if reverse and change of direction
         if (old_i == -1) or (old_i < i_min and reverse):
             reverse = False
-            audio_path = repertory + 'Slices\\slice' + i_min + '.wav'
-            wave_file.close()
-            wave_file = wave.open(audio_path,"rb")
             speed = 1.0
+            # TO DO
+            print('error')
         # Read new file if not reverse and change of direction
         elif old_i > i_min and not reverse:
             reverse = True
-            audio_path = repertory + 'Secils\\ecils' + i_min + '.wav'
-            wave_file.close()
-            wave_file = wave.open(audio_path,"rb")
             speed = 1.0
-        # Else no change of file
+            # TO DO
+            print('error')
         else:
             speed = ((i_min - old_i) * duree_LS) / delay_time
             
