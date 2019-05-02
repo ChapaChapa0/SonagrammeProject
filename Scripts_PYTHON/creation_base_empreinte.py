@@ -1,10 +1,6 @@
 # LIBRARIES
-import cv2                                # state of the art computer vision algorithms library
 import numpy as np                        # fundamental package for scientific computing
 import pyrealsense2 as rs                 # Intel RealSense cross-platform open-source API
-import time
-import wave
-import math
 import sys
 import pickle
 from empreinte_f import calcul_empreinte
@@ -17,9 +13,11 @@ print("Environment Ready")
 repertory = "C:\\Users\\Hatem\\Documents\\Paul\\SonagrammeProject\\Scripts_PYTHON\\Audio\\"
 window_w = [260,390]
 window_h = [100, 480]
-step_downsample = 2  # Step for downsampling on LS
-sigma = 5            # Amount of blur on LS
-threshold = 550      # Threshold to compute LS
+step_downsample = 2  # Step for downsampling on empreinte
+sigma = 5            # Amount of blur on empreinte
+threshold = 550      # Threshold to compute empreinte
+fenetre_empreinte = 100
+pas_empreinte = 10
 
 # Realsense camera parameter
 len_im = 640
@@ -78,7 +76,7 @@ while iteration < 5:
     iteration = iteration + 1
     
 # Calcul empreinte global
-empreinte_global = calcul_empreinte_global(base_empreinte, step_downsample, sigma, threshold)
+empreinte_global = calcul_empreinte_global(base_empreinte, fenetre_empreinte, pas_empreinte)
 
 # Close streaming pipe
 pipe.stop()

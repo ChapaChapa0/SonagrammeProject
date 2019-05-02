@@ -1,5 +1,4 @@
 # LIBRARIES
-import cv2                                # state of the art computer vision algorithms library
 import numpy as np                        # fundamental package for scientific computing
 import pyrealsense2 as rs                 # Intel RealSense cross-platform open-source API
 import time
@@ -137,13 +136,13 @@ while len(data) > 0:
             reverse = False
             speed = 1.0
             # TO DO
-            print('error')
+            raise Exception('error : change of direction')
         # Read new file if not reverse and change of direction
         elif old_i > i_min and not reverse:
             reverse = True
             speed = 1.0
             # TO DO
-            print('error')
+            raise Exception('error : change of direction')
         else:
             speed = ((i_min - old_i) * duree_LS) / delay_time
             
