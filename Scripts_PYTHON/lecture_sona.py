@@ -8,8 +8,8 @@ import audioop
 import sys
 import math
 import pickle
-from LS_f import calcul_LS
-from LS_f import compare_LS
+from imprint_f import compute_imprint
+from imprint_f import compute_position
 print("Environment Ready")
     
 
@@ -32,8 +32,11 @@ exp = p[8]
 gain = p[9]
 dis_shift = p[10]
 
-# Load LS base
-LS_base = p[11]
+# Imprint
+window_imp = p[11]
+step_imp = p[12]
+imprint_global = p[13]
+size_imp = len(imprint_global)
 
 # Close parameters file
 f.close()
@@ -75,8 +78,8 @@ nb_channels = wave_file.getnchannels()
 width = wave_file.getsampwidth()
 framerate = wave_file.getframerate()
 nb_frames = wave_file.getnframes()
-duree_son = float(nb_frames) / float(framerate)
-duree_LS = duree_son / (len(LS_base) - 1)
+time_wave = float(nb_frames) / float(framerate)
+time_pixel = time_wave / size_imp
 
 # Open the data stream
 stream = p.open(format = file_format,
@@ -94,7 +97,7 @@ chunk_size = int(math.ceil(framerate * delay_time))
 data = "init"
 
 # LOOP
-old_i = -1
+old_k = -1
 reverse = False
 
 # Pause
@@ -115,37 +118,21 @@ while len(data) > 0:
     # Compute LS
     depth0 = np.transpose(depth[window_h[0]: window_h[1]])
     depth0 = np.transpose(depth0[window_w[0]:window_w[1]])
-    LS = calcul_LS(depth0, step_downsample, sigma, threshold)
+    imprint = compute_imprint(depth0, step_downsample, sigma, threshold)
         
-    # Compare LS with our base of LS
-    res = compare_LS(LS_base, LS)
-    i_min = res[0]
-    score_min = res[1]
+    # Find imprint position on global imprint
+    k_min = compute_position(imprint_global, imprint, window_imp, step_imp)
 
     # Deduce if lecture is over
-    if (i_min == (len(LS_base) - 1) and not reverse) or (i_min == 0 and reverse):
+    if k_min > size_imp - step_imp[0]:
         data = ""
     # Repeat last buffer if same LS found
-    elif old_i == i_min:
+    elif old_k > k_min - step_imp[1]:
         speed = 1.0
         chunk_size = int(math.ceil(framerate * delay_time * speed))
     # Else continue lecture
     else:
-        # Read new file if it's 1st iteration or if reverse and change of direction
-        if (old_i == -1) or (old_i < i_min and reverse):
-            reverse = False
-            speed = 1.0
-            # TO DO
-            raise Exception('error : change of direction')
-        # Read new file if not reverse and change of direction
-        elif old_i > i_min and not reverse:
-            reverse = True
-            speed = 1.0
-            # TO DO
-            raise Exception('error : change of direction')
-        else:
-            speed = ((i_min - old_i) * duree_LS) / delay_time
-            
+        speed = ((k_min - old_k) * time_pixel) / delay_time
         chunk_size = int(math.ceil(framerate * delay_time * speed))
         data = wave_file.readframes(chunk_size)
 
@@ -160,7 +147,7 @@ while len(data) > 0:
     modified_data = audioop.ratecv(data, width, nb_channels, framerate, new_fr, None)[0]
     stream.write(modified_data)
     
-    old_i = i_min
+    old_k = k_min
     
 # Stop data flow
 stream.stop_stream()

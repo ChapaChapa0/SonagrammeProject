@@ -3,8 +3,9 @@ import numpy as np                        # fundamental package for scientific c
 import pyrealsense2 as rs                 # Intel RealSense cross-platform open-source API
 import sys
 import pickle
-from empreinte_f import calcul_empreinte
-from empreinte_f import calcul_empreinte_global
+from matplotlib import pyplot as plt
+from imprint_f import compute_imprint
+from imprint_f import compute_imprint_global
 print("Environment Ready")
 
 
@@ -13,11 +14,9 @@ print("Environment Ready")
 repertory = "C:\\Users\\Hatem\\Documents\\Paul\\SonagrammeProject\\Scripts_PYTHON\\Audio\\"
 window_w = [260,390]
 window_h = [100, 480]
-step_downsample = 2  # Step for downsampling on empreinte
-sigma = 5            # Amount of blur on empreinte
-threshold = 550      # Threshold to compute empreinte
-fenetre_empreinte = 100
-pas_empreinte = 10
+step_downsample = 2  # Step for downsampling on imprint
+sigma = 5            # Amount of blur on imprint
+threshold = 550      # Threshold to compute imprint
 
 # Realsense camera parameter
 len_im = 640
@@ -26,8 +25,12 @@ exp = 8000
 gain = 16
 dis_shift = 0
 
+# Imprint
+window_imp = 100
+step_imp = [20,5]
+
 # INIT
-# Adjust exposure and gain
+# Adjust exposure and gain()
 ctx = rs.context()
 devices = ctx.query_devices()
 for dev in devices:
@@ -56,8 +59,8 @@ for i in range (0,5):
 # LOOP
 iteration = 0
 old_i = 0
-base_empreinte = []
-while iteration < 5:
+base_imprint = []
+while iteration < 1:
 
     raw_input("Press enter...")
     
@@ -70,20 +73,20 @@ while iteration < 5:
     # Compute LS
     depth0 = np.transpose(depth[window_h[0]: window_h[1]])
     depth0 = np.transpose(depth0[window_w[0]:window_w[1]])
-    empreinte = calcul_empreinte(depth0, step_downsample, sigma, threshold)
-    base_empreinte.append(empreinte)
+    imprint = compute_imprint(depth0, step_downsample, sigma, threshold)
+    base_imprint.append(imprint)
 
     iteration = iteration + 1
     
-# Calcul empreinte global
-empreinte_global = calcul_empreinte_global(base_empreinte, fenetre_empreinte, pas_empreinte)
+# Calcul imprint global
+imprint_global = compute_imprint_global(base_imprint, window_imp, step_imp)
 
 # Close streaming pipe
 pipe.stop()
 
 # Save configuration for lecture
-config = [repertory, window_w, window_h, step_downsample, sigma, threshold,
-          len_im, wid_im, exp,gain, dis_shift, empreinte_global]
+config = [repertory, window_w, window_h, step_downsample, sigma, threshold, len_im,
+          wid_im, exp, gain, dis_shift, window_imp, step_imp, imprint_global]
 f = open("slices_base", "w")
 pickle.dump(config, f)
 f.close()

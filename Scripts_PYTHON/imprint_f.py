@@ -4,7 +4,7 @@ import numpy as np
 
 # FUNCTIONS
 def compute_imprint(depth, step, sigma, threshold):
-    imprint = depth[0:-1:step][0:-1:step]
+    imprint = depth[0:-1][0:-1]
     condition = np.where(imprint > threshold)
     imprint[condition] = 0
     imprint_blur = cv2.medianBlur(imprint, sigma)
