@@ -26,8 +26,8 @@ gain = 16
 dis_shift = 0
 
 # Imprint
-window_imp = 100
-step_imp = [20,5]
+window_imp = 200
+step_imp = [10,2]
 
 # INIT
 # Adjust exposure and gain()
@@ -60,7 +60,7 @@ for i in range (0,5):
 iteration = 0
 old_i = 0
 base_imprint = []
-while iteration < 1:
+while iteration < 3:
 
     raw_input("Press enter...")
     
@@ -70,7 +70,7 @@ while iteration < 1:
     depth_frame = frameset.get_depth_frame()
     depth = np.asanyarray(depth_frame.get_data()).astype(np.uint16)
 
-    # Compute LS
+    # Compute imprint
     depth0 = np.transpose(depth[window_h[0]: window_h[1]])
     depth0 = np.transpose(depth0[window_w[0]:window_w[1]])
     imprint = compute_imprint(depth0, step_downsample, sigma, threshold)
@@ -87,7 +87,7 @@ pipe.stop()
 # Save configuration for lecture
 config = [repertory, window_w, window_h, step_downsample, sigma, threshold, len_im,
           wid_im, exp, gain, dis_shift, window_imp, step_imp, imprint_global]
-f = open("slices_base", "w")
+f = open("imprint_base", "w")
 pickle.dump(config, f)
 f.close()
     
