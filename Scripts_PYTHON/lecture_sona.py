@@ -154,7 +154,7 @@ while len(data) > 0:
     pos = compute_position(imprint_global, imprint, window_imp, step_imp, laser_pos_imp)
 
     # Deduce if lecture is over
-    if pos < 100:
+    if pos < window_imp:
         data = ""
     # Repeat last buffer if same imprint found
     elif old_pos == pos:

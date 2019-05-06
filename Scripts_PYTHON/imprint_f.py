@@ -14,7 +14,7 @@ def compute_imprint(depth, win_h, win_w, step, sigma, threshold):
     return imprint_blur
 
 
-def compute_imprint_global(base_imprint, m, step, laser_pos):
+def compute_imprint_global(base_imprint, m, step):
     n = len(base_imprint)
     step0 = step[0]
     step1 = step[1]
@@ -25,7 +25,7 @@ def compute_imprint_global(base_imprint, m, step, laser_pos):
             imp = base_imprint[k]
             score_min = 1000000
             i_min = -1
-            imp_win = imp[laser_pos - m : laser_pos + m]
+            imp_win = imp[0 : 2*m]
             for i in range (m, size_imp - m, step0):
                 imp0_win = imp0[i - m : i + m]
                 mask1 = np.abs(imp_win - imp0_win)
@@ -47,7 +47,11 @@ def compute_imprint_global(base_imprint, m, step, laser_pos):
                 if score < score_min:
                     score_min = score
                     k_min = k
-            imp0 = np.concatenate((imp0, imp[size_imp - k_min - 1 : -1]), axis = 0)
+            p = size_imp - (k_min + m)
+            print(p)
+            print(k_min)
+            if p < len(imp) - 2*m:
+                imp0 = np.concatenate((imp0, imp[p + 2*m : -1]), axis = 0)
         imp_global = imp0
     else:
         imp_global = base_imprint[0]
@@ -83,7 +87,7 @@ def compute_position(imp_global, imp, m, step, laser_pos):
         if score < score_min:
             score_min = score
             k_min = k
-    position = k_min + m
+    position = k_min
     return position
         
 

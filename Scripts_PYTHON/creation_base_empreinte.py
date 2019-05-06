@@ -18,7 +18,6 @@ step_downsample = 2  # Step for downsampling on imprint
 sigma = 5            # Amount of blur on imprint
 threshold = 555      # Threshold to compute imprint
 laser_position = 220
-laser_pos_imp = laser_position - window_h[0]
 
 # Realsense camera parameter
 len_im = 640
@@ -28,7 +27,7 @@ gain = 16
 dis_shift = 0
 
 # Imprint
-window_imp = 80
+window_imp = 60
 step_imp = [10,2]
 
 # INIT
@@ -88,7 +87,7 @@ while iteration < 3:
     iteration = iteration + 1
     
 # Calcul imprint global
-imprint_global = compute_imprint_global(base_imprint, window_imp, step_imp, laser_pos_imp)
+imprint_global = compute_imprint_global(base_imprint, window_imp, step_imp)
 
 # Close streaming pipe
 pipe.stop()
