@@ -24,9 +24,7 @@ step_downsample = p[3]  # Step for downsampling on LS
 sigma = p[4]            # Amount of blur on LS
 threshold = p[5]        # Threshold to compute LS
 laser_position = p[6]
-laser_pos_imp = laser_position - window_h[0]
-delay_time = 0.2        # Time between each iteration
-epsilon_time = 0.05
+delay_time = 0.05        # Time between each iteration
 
 # Realsense camera parameter
 len_im = p[7]
@@ -44,29 +42,6 @@ size_imp = len(imprint_global)
 # Close parameters file
 f.close()
 
-
-# INIT CAMERA
-# Adjust exposure and gain
-ctx = rs.context()
-devices = ctx.query_devices()
-for dev in devices:
-    sensors = dev.query_sensors();
-    for sens in sensors:
-        if sens.is_depth_sensor():
-            emit = sens.get_option(rs.option.emitter_enabled); # Get emitter status
-            sens.set_option(rs.option.exposure, exp); # Set exposure
-            sens.set_option(rs.option.gain, gain) # Set gain
-            sens.set_option(rs.option.emitter_enabled, dis_shift) # Disable emitter
-pipe = rs.pipeline()
-config = rs.config()
-config.enable_stream(rs.stream.color, len_im, wid_im, rs.format.rgb8, 30) #1280 * 720 ou 640 * 480
-config.enable_stream(rs.stream.depth, len_im, wid_im, rs.format.z16, 30) #1280 * 720 ou 640 * 480
-profile = pipe.start(config)
-
-# Discard first frames
-for i in range (0,5):
-    frameset = pipe.wait_for_frames()
-
 # INIT AUDIO
 # Audio path
 audio_path = repertory + 'empreintes_2.wav'
@@ -82,7 +57,7 @@ width = wave_file.getsampwidth()
 framerate = wave_file.getframerate()
 nb_frames = wave_file.getnframes()
 time_wave = float(nb_frames) / float(framerate)
-time_pixel = time_wave / size_imp
+time_pixel = 0.01
 
 # Open the data stream
 stream = p.open(format = file_format,
@@ -99,70 +74,46 @@ new_fr = framerate
 chunk_size = int(math.ceil(framerate * delay_time))
 data = "init"
 
-# Get new frames
-frameset = pipe.wait_for_frames()
-
-# Get arrays of depth data
-depth_frame = frameset.get_depth_frame()
-depth = np.asanyarray(depth_frame.get_data()).astype(np.uint16)
-
-# Compute imprint
-imprint = compute_imprint(depth, window_h, window_w, step_downsample, sigma, threshold)
+# L_POS
+l_pos = [0,0,0,0,0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100,105,110,115,120,130,140,150,
+         160,170,180,190,200,210,220,230,240,250,252,254,256,258,260,262,264,266,268,270,272,274,276,278,280,
+         285,290,295,300,305,310,315,320,325,330,335]
     
 # Find imprint position on global imprint
-pos = compute_position(imprint_global, imprint, window_imp, step_imp, laser_pos_imp)
-start_pos = pos
-old_pos = pos
+start_pos = 0
+pos = 0
 
 # Lecture start when the sona start moving
-epsilon = 3
+epsilon = 2
+i = 0
 while (pos < start_pos + epsilon) and (pos > start_pos - epsilon):
     
-    # Get new frames
-    frameset = pipe.wait_for_frames()
+    pos = l_pos[i]
+    i += 1
     
-    # Get arrays of depth data
-    depth_frame = frameset.get_depth_frame()
-    depth = np.asanyarray(depth_frame.get_data()).astype(np.uint16)
-    
-    # Compute imprint
-    imprint = compute_imprint(depth, window_h, window_w, step_downsample, sigma, threshold)
-        
-    # Find imprint position on global imprint
-    old_pos = pos
-    pos = compute_position(imprint_global, imprint, window_imp, step_imp, laser_pos_imp)
+#    print(str(i) + ' : ' + str(pos))
     
     # Pause
     time.sleep(delay_time)
 
 # LOOP
-while len(data) > 0:
+old_pos = l_pos[i-1]
+epsilon_time = 0.005
+while len(l_pos[i:-1]) > 0:
 
     start = time.time()
+
+    pos = l_pos[i]
     
-    # Get new frames
-    frameset = pipe.wait_for_frames()
+    print(str(i) + ' : ' + str(pos))
 
-    # Get arrays of depth data
-    depth_frame = frameset.get_depth_frame()
-    depth = np.asanyarray(depth_frame.get_data()).astype(np.uint16)
-
-    # Compute imprint
-    imprint = compute_imprint(depth, window_h, window_w, step_downsample, sigma, threshold)
-        
-    # Find imprint position on global imprint
-    pos = compute_position(imprint_global, imprint, window_imp, step_imp, laser_pos_imp)
-
-    # Deduce if lecture is over
-    if pos < 100:
-        data = ""
     # Repeat last buffer if same imprint found
-    elif old_pos == pos:
+    if old_pos > pos + epsilon:
         speed = 1.0
         chunk_size = int(math.ceil(framerate * delay_time * speed))
     # Else continue lecture
     else:
-        speed = abs(((old_pos - pos) * time_pixel) / delay_time)
+        speed = ((pos - old_pos) * time_pixel) / delay_time
         chunk_size = int(math.ceil(framerate * delay_time * speed))
         data = wave_file.readframes(chunk_size)
 
@@ -176,18 +127,13 @@ while len(data) > 0:
     new_fr = int(round(framerate / speed))
     modified_data = audioop.ratecv(data, width, nb_channels, framerate, new_fr, None)[0]
     stream.write(modified_data)
-
+    
     old_pos = pos
     
-# Stop data flow
-stream.stop_stream()
-stream.close()
+    i += 1
 
 # Close PyAudio
 p.terminate()
 
 # Close file stream
 wave_file.close()
-
-# Close streaming pipe
-pipe.stop()

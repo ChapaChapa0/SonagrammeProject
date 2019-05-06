@@ -13,10 +13,12 @@ print("Environment Ready")
 # Parameters
 repertory = "C:\\Users\\Hatem\\Documents\\Paul\\SonagrammeProject\\Scripts_PYTHON\\Audio\\"
 window_w = [260,390]
-window_h = [100, 480]
+window_h = [100, 340]
 step_downsample = 2  # Step for downsampling on imprint
 sigma = 5            # Amount of blur on imprint
-threshold = 550      # Threshold to compute imprint
+threshold = 555      # Threshold to compute imprint
+laser_position = 220
+laser_pos_imp = laser_position - window_h[0]
 
 # Realsense camera parameter
 len_im = 640
@@ -26,7 +28,7 @@ gain = 16
 dis_shift = 0
 
 # Imprint
-window_imp = 200
+window_imp = 80
 step_imp = [10,2]
 
 # INIT
@@ -59,34 +61,41 @@ for i in range (0,5):
 # LOOP
 iteration = 0
 old_i = 0
+nb_frames = 5
 base_imprint = []
 while iteration < 3:
 
     raw_input("Press enter...")
     
-    frameset = pipe.wait_for_frames()
+    imprint_m = 0
+    for i in range (0,nb_frames):
+        frameset = pipe.wait_for_frames()
 
-    # Get arrays of depth data
-    depth_frame = frameset.get_depth_frame()
-    depth = np.asanyarray(depth_frame.get_data()).astype(np.uint16)
+        # Get arrays of depth data
+        depth_frame = frameset.get_depth_frame()
+        depth = np.asanyarray(depth_frame.get_data()).astype(np.uint16)
 
-    # Compute imprint
-    depth0 = np.transpose(depth[window_h[0]: window_h[1]])
-    depth0 = np.transpose(depth0[window_w[0]:window_w[1]])
-    imprint = compute_imprint(depth0, step_downsample, sigma, threshold)
-    base_imprint.append(imprint)
+        # Compute imprint
+        imprint = compute_imprint(depth, window_h, window_w, step_downsample, sigma, threshold)
+        
+        # Compute mean of imprint
+        imprint_m += imprint
+        
+    # Add imprint to the base
+    imprint_m = imprint_m/nb_frames
+    base_imprint.append(imprint_m)
 
     iteration = iteration + 1
     
 # Calcul imprint global
-imprint_global = compute_imprint_global(base_imprint, window_imp, step_imp)
+imprint_global = compute_imprint_global(base_imprint, window_imp, step_imp, laser_pos_imp)
 
 # Close streaming pipe
 pipe.stop()
 
 # Save configuration for lecture
-config = [repertory, window_w, window_h, step_downsample, sigma, threshold, len_im,
-          wid_im, exp, gain, dis_shift, window_imp, step_imp, imprint_global]
+config = [repertory, window_w, window_h, step_downsample, sigma, threshold, laser_position,
+          len_im, wid_im, exp, gain, dis_shift, window_imp, step_imp, imprint_global]
 f = open("imprint_base", "w")
 pickle.dump(config, f)
 f.close()
