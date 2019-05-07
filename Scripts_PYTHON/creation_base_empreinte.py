@@ -16,7 +16,7 @@ window_w = [260,390]
 window_h = [100, 340]
 step_downsample = 2  # Step for downsampling on imprint
 sigma = 5            # Amount of blur on imprint
-threshold = 555      # Threshold to compute imprint
+threshold = 560      # Threshold to compute imprint
 laser_position = 220
 
 # Realsense camera parameter
@@ -62,7 +62,8 @@ iteration = 0
 old_i = 0
 nb_frames = 5
 base_imprint = []
-while iteration < 3:
+l_color = []
+while iteration < 2:
 
     raw_input("Press enter...")
     
@@ -79,13 +80,19 @@ while iteration < 3:
         
         # Compute mean of imprint
         imprint_m += imprint
-        
+
     # Add imprint to the base
     imprint_m = imprint_m/nb_frames
     base_imprint.append(imprint_m)
 
+    # Color
+    color_frame = frameset.get_color_frame()
+    color = np.asanyarray(color_frame.get_data())
+    color = color[window_h[0] : window_h[1]]
+    l_color.append(color)
+
     iteration = iteration + 1
-    
+
 # Calcul imprint global
 imprint_global = compute_imprint_global(base_imprint, window_imp, step_imp)
 
@@ -98,7 +105,7 @@ config = [repertory, window_w, window_h, step_downsample, sigma, threshold, lase
 f = open("imprint_base", "w")
 pickle.dump(config, f)
 f.close()
-    
-    
-    
+
+
+
     

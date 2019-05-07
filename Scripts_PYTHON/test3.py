@@ -33,7 +33,8 @@ step_imp = [10,2]
 
 f = open("imprints0", "r")
 p = pickle.load(f)
-imp_global = p[0]
+#imp_global = p[0]
+imp_global = imprint_global[100:-1]
 base_imprint = p[1]
 f.close()
 
@@ -50,7 +51,7 @@ step1 = 2
 step_imp = [10,2]
 
 #pos = compute_position(imp_global, impC, m, step_imp, laser_pos_imp)
-imp = impD
+imp = impE
 
 size_imp = len(imp_global)
 score_min = 1000000
@@ -63,6 +64,9 @@ for i in range (m, size_imp - m, step0):
     mask2 = np.abs(imp_win - imp_g_win)
     score = np.mean(mask1) + np.mean(mask2)
     if score < score_min:
+        imp_min = imp_g_win
+        mask1_min = mask1
+        mask2_min = mask2
         score_min = score
         i_min = i
 if i_min == -1:
@@ -76,7 +80,12 @@ for k in range (k0,k1,step1):
     mask2 = np.abs(imp_win - imp_g_win)
     score = np.mean(mask1) + np.mean(mask2)
     if score < score_min:
+        imp_min = imp_g_win
+        mask1_min = mask1
+        mask2_min = mask2
         score_min = score
         k_min = k
 pos = k_min
+
+print(pos)
 
