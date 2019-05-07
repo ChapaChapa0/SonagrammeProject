@@ -106,36 +106,38 @@ frameset = pipe.wait_for_frames()
 depth_frame = frameset.get_depth_frame()
 depth = np.asanyarray(depth_frame.get_data()).astype(np.uint16)
 
-# Compute imprint
-imprint = compute_imprint(depth, window_h, window_w, step_downsample, sigma, threshold)
-    
-# Find imprint position on global imprint
-pos = compute_position(imprint_global, imprint, window_imp, step_imp, laser_pos_imp)
-start_pos = pos
-old_pos = pos
-
-# Lecture start when the sona start moving
-epsilon = 3
-while (pos < start_pos + epsilon) and (pos > start_pos - epsilon):
-    
-    # Get new frames
-    frameset = pipe.wait_for_frames()
-    
-    # Get arrays of depth data
-    depth_frame = frameset.get_depth_frame()
-    depth = np.asanyarray(depth_frame.get_data()).astype(np.uint16)
-    
-    # Compute imprint
-    imprint = compute_imprint(depth, window_h, window_w, step_downsample, sigma, threshold)
-        
-    # Find imprint position on global imprint
-    old_pos = pos
-    pos = compute_position(imprint_global, imprint, window_imp, step_imp, laser_pos_imp)
-    
-    # Pause
-    time.sleep(delay_time)
+## Compute imprint
+#imprint = compute_imprint(depth, window_h, window_w, step_downsample, sigma, threshold)
+#
+## Find imprint position on global imprint
+#pre_pos = 0
+#pos = compute_position(imprint_global, imprint, window_imp, step_imp, laser_pos_imp, pre_pos)
+#start_pos = pos
+#pre_pos = pos
+#
+## Lecture start when the sona start moving
+#epsilon = 3
+#while (pos < start_pos + epsilon) and (pos > start_pos - epsilon):
+#    
+#    # Get new frames
+#    frameset = pipe.wait_for_frames()
+#    
+#    # Get arrays of depth data
+#    depth_frame = frameset.get_depth_frame()
+#    depth = np.asanyarray(depth_frame.get_data()).astype(np.uint16)
+#    
+#    # Compute imprint
+#    imprint = compute_imprint(depth, window_h, window_w, step_downsample, sigma, threshold)
+#        
+#    # Find imprint position on global imprint
+#    pre_pos = pos
+#    pos = compute_position(imprint_global, imprint, window_imp, step_imp, laser_pos_imp, pre_pos)
+#    
+#    # Pause
+#    time.sleep(delay_time)
 
 # LOOP
+pre_pos = 0
 while len(data) > 0:
 
     start = time.time()
@@ -151,18 +153,18 @@ while len(data) > 0:
     imprint = compute_imprint(depth, window_h, window_w, step_downsample, sigma, threshold)
         
     # Find imprint position on global imprint
-    pos = compute_position(imprint_global, imprint, window_imp, step_imp, laser_pos_imp)
+    pos = compute_position(imprint_global, imprint, window_imp, step_imp, laser_pos_imp, pre_pos)
 
     # Deduce if lecture is over
-    if pos < window_imp:
+    if pos > 200:
         data = ""
     # Repeat last buffer if same imprint found
-    elif old_pos == pos:
+    elif pre_pos == pos:
         speed = 1.0
         chunk_size = int(math.ceil(framerate * delay_time * speed))
     # Else continue lecture
     else:
-        speed = abs(((old_pos - pos) * time_pixel) / delay_time)
+        speed = abs(((pre_pos - pos) * time_pixel) / delay_time)
         chunk_size = int(math.ceil(framerate * delay_time * speed))
         data = wave_file.readframes(chunk_size)
 
@@ -177,7 +179,7 @@ while len(data) > 0:
     modified_data = audioop.ratecv(data, width, nb_channels, framerate, new_fr, None)[0]
     stream.write(modified_data)
 
-    old_pos = pos
+    pre_pos = pos
     
 # Stop data flow
 stream.stop_stream()

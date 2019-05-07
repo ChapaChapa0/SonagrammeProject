@@ -57,47 +57,42 @@ def compute_imprint(depth, win_h, win_w, step, sigma, threshold):
 #        imp_global = base_imprint[0]
 #    return imp_global
     
-def compute_imprint_global(base_imprint, m, step):
+def compute_imprint_global(base_imprint, m, step, laser_pos):
     n = len(base_imprint)
     imp0 = base_imprint[0]
+    imp0 = imp0[laser_pos : -1]
     for i in range (1,n):
         imp = base_imprint[i]
+        imp = imp[laser_pos : -1]
         imp0 = np.concatenate((imp0, imp), axis = 0)
     imp_global = imp0
     return imp_global
 
 
-def compute_position(imp_global, imp, m, step, laser_pos):
+def compute_position(imp_global, imp, m, step, laser_pos, pre_pos):
     size_imp = len(imp_global)
     score_min = 1000000
-    i_min = -1
-    imp_win = imp[laser_pos - m : laser_pos + m]
-    step0 = step[0]
-    step1 = step[1]
+    k_min = -1
+    imp_win = imp[laser_pos : laser_pos + m]
+    search_win = 100
+    step = 5
     
-    for i in range (m, size_imp - m, step0):
-        imp_g_win = imp_global[i - m : i + m]
-        mask1 = np.abs(imp_g_win - imp_win)
-        mask2 = np.abs(imp_win - imp_g_win)
-        score = np.mean(mask1) + np.mean(mask2)
-        if score < score_min:
-            score_min = score
-            i_min = i
-    if i_min == -1:
-        raise Exception('error : i_min not found')
-    k0 = i_min
-    k1 = i_min + step0   
-    k_min = i_min
-    for k in range (k0,k1,step1):
-        imp_g_win = imp_global[k - m : k + m]
+    k0 = pre_pos
+    if pre_pos + search_win > size_imp - m:
+        k1 = size_imp - m
+    else:
+        k1 = pre_pos + search_win
+    for k in range (k0, k1, step):
+        imp_g_win = imp_global[k : k + m]
         mask1 = np.abs(imp_g_win - imp_win)
         mask2 = np.abs(imp_win - imp_g_win)
         score = np.mean(mask1) + np.mean(mask2)
         if score < score_min:
             score_min = score
             k_min = k
+    if k_min == -1:
+        raise Exception('error : k_min not found')
     position = k_min
     return position
         
-
 

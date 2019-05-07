@@ -1,6 +1,7 @@
 # LIBRARIES
 import numpy as np                        # fundamental package for scientific computing
 import pickle
+import math
 from matplotlib import pyplot as plt
 from imprint_f import compute_imprint
 from imprint_f import compute_position
@@ -27,23 +28,16 @@ gain = 16
 dis_shift = 0
 
 # Imprint
+#m = int(math.floor(window_h[1] - laser_position))
 m = 100
 step_imp = [10,2]
 
 
 f = open("imprints0", "r")
 p = pickle.load(f)
-#imp_global = p[0]
-imp_global = imprint_global[100:-1]
-base_imprint = p[1]
+imp_global = p[0]
+base_imp = p[1]
 f.close()
-
-# Compute imprint
-impA = base_imprint[0]
-impB = base_imprint[1]
-impC = base_imprint[2]
-impD = base_imprint[3]
-impE = base_imprint[4]
 
 # Compute global imprint
 step0 = 10
@@ -51,15 +45,15 @@ step1 = 2
 step_imp = [10,2]
 
 #pos = compute_position(imp_global, impC, m, step_imp, laser_pos_imp)
-imp = impE
+imp = base_imp[3]
 
 size_imp = len(imp_global)
 score_min = 1000000
 i_min = -1
-imp_win = imp[laser_pos_imp - m : laser_pos_imp + m]
+imp_win = imp[laser_pos_imp : laser_pos_imp + m]
 
-for i in range (m, size_imp - m, step0):
-    imp_g_win = imp_global[i - m : i + m]
+for i in range (0, size_imp - m, step0):
+    imp_g_win = imp_global[i : i + m]
     mask1 = np.abs(imp_g_win - imp_win)
     mask2 = np.abs(imp_win - imp_g_win)
     score = np.mean(mask1) + np.mean(mask2)
@@ -75,7 +69,7 @@ k0 = i_min
 k1 = i_min + step0   
 k_min = i_min
 for k in range (k0,k1,step1):
-    imp_g_win = imp_global[k - m : k + m]
+    imp_g_win = imp_global[k : k + m]
     mask1 = np.abs(imp_g_win - imp_win)
     mask2 = np.abs(imp_win - imp_g_win)
     score = np.mean(mask1) + np.mean(mask2)

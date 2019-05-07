@@ -13,11 +13,12 @@ print("Environment Ready")
 # Parameters
 repertory = "C:\\Users\\Hatem\\Documents\\Paul\\SonagrammeProject\\Scripts_PYTHON\\Audio\\"
 window_w = [260,390]
-window_h = [100, 340]
+window_h = [110, 330]
 step_downsample = 2  # Step for downsampling on imprint
 sigma = 5            # Amount of blur on imprint
 threshold = 560      # Threshold to compute imprint
 laser_position = 220
+laser_pos_imp = laser_position - window_h[1]
 
 # Realsense camera parameter
 len_im = 640
@@ -63,7 +64,7 @@ old_i = 0
 nb_frames = 5
 base_imprint = []
 l_color = []
-while iteration < 2:
+while iteration < 3:
 
     raw_input("Press enter...")
     
@@ -94,14 +95,14 @@ while iteration < 2:
     iteration = iteration + 1
 
 # Calcul imprint global
-imprint_global = compute_imprint_global(base_imprint, window_imp, step_imp)
+imprint_global = compute_imprint_global(base_imprint, window_imp, step_imp, laser_pos_imp)
 
 # Close streaming pipe
 pipe.stop()
 
 # Save configuration for lecture
 config = [repertory, window_w, window_h, step_downsample, sigma, threshold, laser_position,
-          len_im, wid_im, exp, gain, dis_shift, window_imp, step_imp, imprint_global]
+          len_im, wid_im, exp, gain, dis_shift, window_imp, step_imp, imprint_global, base_imprint]
 f = open("imprint_base", "w")
 pickle.dump(config, f)
 f.close()
