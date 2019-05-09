@@ -169,16 +169,26 @@ while len(data) > 0:
             chunk_size = int(math.ceil(framerate * delay_time * speed))
             
             # Determine position in lecture
-#            sound_pos = int(round(pos * time_pixel * framerate))
-#            wave_file.setpos(sound_pos)
-            data = wave_file.readframes(chunk_size)
+            if pos < pre_pos:
+                # Audio is in reverse if lecture goes backward
+                sound_pos = int(round(pos * time_pixel * framerate - chunk_size))
+                if sound_pos < 0:
+                    wave_file.setpos(0)
+                else:
+                    wave_file.setpos(sound_pos)
+                data = wave_file.readframes(chunk_size)
+                data = audioop.reverse(data, width)
+            else:
+                sound_pos = int(round(pos * time_pixel * framerate))
+                wave_file.setpos(sound_pos)
+                data = wave_file.readframes(chunk_size)
         
             # Determine new framerate according to new speed
             new_fr = int(round(framerate / speed))
             modified_data = audioop.ratecv(data, width, nb_channels, framerate, new_fr, None)[0]
     
             # Rewind wave file for next iteration
-#            wave_file.rewind()
+            wave_file.rewind()
     
         # Sleep before next iteration
         end = time.time()

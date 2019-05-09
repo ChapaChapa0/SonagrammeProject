@@ -78,6 +78,10 @@ data = "init"
 l_pos = [0,0,0,0,0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100,105,110,115,120,130,140,150,
          160,170,180,190,200,210,220,230,240,250,252,254,256,258,260,262,264,266,268,270,272,274,276,278,280,
          285,290,295,300,305,310,315,320,325,330,335]
+
+l_pos_2 = [0,0,0,0,0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100,105,110,115,120,130,140,150,
+         160,170,180,190,200,210,220,230,240,250,252,250,245,240,235,230,225,220,215,210,205,200,195,190,185,
+         170,160,150,140,130,120,118,116,114,112,110]
     
 # Find imprint position on global imprint
 start_pos = 0
@@ -88,7 +92,7 @@ epsilon = 2
 i = 0
 while (pos < start_pos + epsilon) and (pos > start_pos - epsilon):
     
-    pos = l_pos[i]
+    pos = l_pos_2[i]
     i += 1
     
 #    print(str(i) + ' : ' + str(pos))
@@ -97,40 +101,58 @@ while (pos < start_pos + epsilon) and (pos > start_pos - epsilon):
     time.sleep(delay_time)
 
 # LOOP
-old_pos = l_pos[i-1]
+pre_pos = l_pos_2[i-1]
 epsilon_time = 0.005
-while len(l_pos[i:-1]) > 0:
+while i < len(l_pos) and len(data) > 0:
 
     start = time.time()
 
-    pos = l_pos[i]
+    pos = l_pos_2[i]
     
-    print(str(i) + ' : ' + str(pos))
+#    print(str(i) + ' : ' + str(pos))
 
-    # Repeat last buffer if same imprint found
-    if old_pos > pos + epsilon:
-        speed = 1.0
-        chunk_size = int(math.ceil(framerate * delay_time * speed))
+    # Deduce if lecture is over
+    if pos > 320:
+        data = ""
     # Else continue lecture
     else:
-        speed = ((pos - old_pos) * time_pixel) / delay_time
-        chunk_size = int(math.ceil(framerate * delay_time * speed))
-        data = wave_file.readframes(chunk_size)
-
-    # Sleep
-    end = time.time()
-    computing_time = end - start
-    if computing_time < delay_time:
-        time.sleep(delay_time - computing_time - epsilon_time)
-
-    # Play sound according to new speed
-    new_fr = int(round(framerate / speed))
-    modified_data = audioop.ratecv(data, width, nb_channels, framerate, new_fr, None)[0]
-    stream.write(modified_data)
+        # If same position nothing is readen
+        if pos == pre_pos:
+            modified_data = ''
+        else:
+            # Determine speed of lecture and chunk_size according to this speed
+            speed = abs(((pre_pos - pos) * time_pixel) / delay_time)
+            chunk_size = int(math.ceil(framerate * delay_time * speed))
+            
+            # Determine position in lecture
+            if pos < pre_pos:
+                sound_pos = int(round(pos * time_pixel * framerate - chunk_size))
+                wave_file.setpos(sound_pos)
+                data = wave_file.readframes(chunk_size)
+                data = audioop.reverse(data, width)
+            else:
+                sound_pos = int(round(pos * time_pixel * framerate))
+                wave_file.setpos(sound_pos)
+                data = wave_file.readframes(chunk_size)
+        
+            # Determine new framerate according to new speed
+            new_fr = int(round(framerate / speed))
+            modified_data = audioop.ratecv(data, width, nb_channels, framerate, new_fr, None)[0]
     
-    old_pos = pos
+            # Rewind wave file for next iteration
+            wave_file.rewind()
     
-    i += 1
+        # Sleep before next iteration
+        end = time.time()
+        computing_time = end - start
+        if computing_time < delay_time:
+            time.sleep(delay_time - computing_time - epsilon_time)
+
+        # Play sound with new framerate
+        stream.write(modified_data)
+
+        pre_pos = pos
+        i += 1
 
 # Close PyAudio
 p.terminate()
