@@ -11,32 +11,44 @@ print("Environment Ready")
 
 # MAIN
 # Parameters
-repertory = "C:\\Users\\Hatem\\Documents\\Paul\\SonagrammeProject\\Scripts_PYTHON\\Audio\\"
-window_w = [260,390]
-window_h = [100, 340]
-step_downsample = 2  # Step for downsampling on imprint
-sigma = 5            # Amount of blur on imprint
-threshold = 560      # Threshold to compute imprint
-laser_position = 220
+f = open("imprint_base", "r")
+p = pickle.load(f)
+repertory = p[0]
+window_w = p[1]
+window_h = p[2]
+step_downsample = p[3]  # Step for downsampling on LS
+sigma = p[4]            # Amount of blur on LS
+threshold = p[5]        # Threshold to compute LS
+laser_position = p[6]
 laser_pos_imp = laser_position - window_h[0]
+delay_time = 0.2        # Time between each iteration
+epsilon_time = 0.05
 
 # Realsense camera parameter
-len_im = 640
-wid_im = 480
-exp = 8000
-gain = 16
-dis_shift = 0
+len_im = p[7]
+wid_im = p[8]
+exp = p[9]
+gain = p[10]
+dis_shift = p[11]
+
+# Imprint
+window_imp = p[12]
+step_imp = p[13]
+imp_global = p[14]
+base_imp = p[15]
+size_imp = len(imp_global)
+
+# Close parameters file
+f.close()
 
 # Imprint
 #m = int(math.floor(window_h[1] - laser_position))
-m = 100
-step_imp = [10,2]
+m = window_imp
 
 
-f = open("imprints0", "r")
+f = open("imprints_1", "r")
 p = pickle.load(f)
-imp_global = p[0]
-base_imp = p[1]
+base_imp = p
 f.close()
 
 # Compute global imprint
@@ -45,22 +57,24 @@ step1 = 2
 step_imp = [10,2]
 
 #pos = compute_position(imp_global, impC, m, step_imp, laser_pos_imp)
-imp = base_imp[3]
+imp = base_imp[4]
 
 size_imp = len(imp_global)
 score_min = 1000000
 i_min = -1
+
+imp_global = imp_global.astype(np.int16)
+imp = imp.astype(np.int16)
+
 imp_win = imp[laser_pos_imp : laser_pos_imp + m]
 
 for i in range (0, size_imp - m, step0):
     imp_g_win = imp_global[i : i + m]
-    mask1 = np.abs(imp_g_win - imp_win)
-    mask2 = np.abs(imp_win - imp_g_win)
-    score = np.mean(mask1) + np.mean(mask2)
+    mask = np.abs(imp_g_win - imp_win)
+    score = np.mean(mask)
     if score < score_min:
         imp_min = imp_g_win
-        mask1_min = mask1
-        mask2_min = mask2
+        mask_min = mask
         score_min = score
         i_min = i
 if i_min == -1:
@@ -70,13 +84,11 @@ k1 = i_min + step0
 k_min = i_min
 for k in range (k0,k1,step1):
     imp_g_win = imp_global[k : k + m]
-    mask1 = np.abs(imp_g_win - imp_win)
-    mask2 = np.abs(imp_win - imp_g_win)
-    score = np.mean(mask1) + np.mean(mask2)
+    mask = np.abs(imp_g_win - imp_win)
+    score = np.mean(mask)
     if score < score_min:
         imp_min = imp_g_win
-        mask1_min = mask1
-        mask2_min = mask2
+        mask_min = mask
         score_min = score
         k_min = k
 pos = k_min

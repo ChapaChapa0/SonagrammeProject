@@ -25,8 +25,8 @@ sigma = p[4]            # Amount of blur on LS
 threshold = p[5]        # Threshold to compute LS
 laser_position = p[6]
 laser_pos_imp = laser_position - window_h[0]
-delay_time = 0.2        # Time between each iteration
-epsilon_time = 0.05
+delay_time = 0.1        # Time between each iteration
+epsilon_time = 0.02
 
 # Realsense camera parameter
 len_im = p[7]
@@ -106,35 +106,35 @@ frameset = pipe.wait_for_frames()
 depth_frame = frameset.get_depth_frame()
 depth = np.asanyarray(depth_frame.get_data()).astype(np.uint16)
 
-## Compute imprint
-#imprint = compute_imprint(depth, window_h, window_w, step_downsample, sigma, threshold)
-#
-## Find imprint position on global imprint
-#pre_pos = 0
-#pos = compute_position(imprint_global, imprint, window_imp, step_imp, laser_pos_imp, pre_pos)
-#start_pos = pos
-#pre_pos = pos
-#
-## Lecture start when the sona start moving
-#epsilon = 3
-#while (pos < start_pos + epsilon) and (pos > start_pos - epsilon):
-#    
-#    # Get new frames
-#    frameset = pipe.wait_for_frames()
-#    
-#    # Get arrays of depth data
-#    depth_frame = frameset.get_depth_frame()
-#    depth = np.asanyarray(depth_frame.get_data()).astype(np.uint16)
-#    
-#    # Compute imprint
-#    imprint = compute_imprint(depth, window_h, window_w, step_downsample, sigma, threshold)
-#        
-#    # Find imprint position on global imprint
-#    pre_pos = pos
-#    pos = compute_position(imprint_global, imprint, window_imp, step_imp, laser_pos_imp, pre_pos)
-#    
-#    # Pause
-#    time.sleep(delay_time)
+# Compute imprint
+imprint = compute_imprint(depth, window_h, window_w, step_downsample, sigma, threshold)
+
+# Find imprint position on global imprint
+start_pos = 0
+pos = compute_position(imprint_global, imprint, window_imp, step_imp, laser_pos_imp, start_pos)
+start_pos = pos
+pre_pos = pos
+
+# Lecture start when the sona start moving
+epsilon = 3
+while (pos < start_pos + epsilon) and (pos > start_pos - epsilon):
+    
+    # Get new frames
+    frameset = pipe.wait_for_frames()
+    
+    # Get arrays of depth data
+    depth_frame = frameset.get_depth_frame()
+    depth = np.asanyarray(depth_frame.get_data()).astype(np.uint16)
+    
+    # Compute imprint
+    imprint = compute_imprint(depth, window_h, window_w, step_downsample, sigma, threshold)
+        
+    # Find imprint position on global imprint
+    pre_pos = pos
+    pos = compute_position(imprint_global, imprint, window_imp, step_imp, laser_pos_imp, pre_pos)
+    
+    # Pause
+    time.sleep(delay_time)
 
 # LOOP
 pre_pos = 0
@@ -158,28 +158,38 @@ while len(data) > 0:
     # Deduce if lecture is over
     if pos > 200:
         data = ""
-    # Repeat last buffer if same imprint found
-    elif pre_pos == pos:
-        speed = 1.0
-        chunk_size = int(math.ceil(framerate * delay_time * speed))
     # Else continue lecture
     else:
-        speed = abs(((pre_pos - pos) * time_pixel) / delay_time)
-        chunk_size = int(math.ceil(framerate * delay_time * speed))
-        data = wave_file.readframes(chunk_size)
+        # If same position nothing is readen
+        if pos == pre_pos:
+            modified_data = ''
+        else:
+            # Determine speed of lecture and chunk_size according to this speed
+            speed = abs(((pre_pos - pos) * time_pixel) / delay_time)
+            chunk_size = int(math.ceil(framerate * delay_time * speed))
+            
+            # Determine position in lecture
+#            sound_pos = int(round(pos * time_pixel * framerate))
+#            wave_file.setpos(sound_pos)
+            data = wave_file.readframes(chunk_size)
+        
+            # Determine new framerate according to new speed
+            new_fr = int(round(framerate / speed))
+            modified_data = audioop.ratecv(data, width, nb_channels, framerate, new_fr, None)[0]
+    
+            # Rewind wave file for next iteration
+#            wave_file.rewind()
+    
+        # Sleep before next iteration
+        end = time.time()
+        computing_time = end - start
+        if computing_time < delay_time:
+            time.sleep(delay_time - computing_time - epsilon_time)
 
-    # Sleep
-    end = time.time()
-    computing_time = end - start
-    if computing_time < delay_time:
-        time.sleep(delay_time - computing_time - epsilon_time)
+        # Play sound with new framerate
+        stream.write(modified_data)
 
-    # Play sound according to new speed
-    new_fr = int(round(framerate / speed))
-    modified_data = audioop.ratecv(data, width, nb_channels, framerate, new_fr, None)[0]
-    stream.write(modified_data)
-
-    pre_pos = pos
+        pre_pos = pos
     
 # Stop data flow
 stream.stop_stream()

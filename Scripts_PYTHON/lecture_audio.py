@@ -3,9 +3,10 @@ import pyaudio
 import wave
 import audioop
 import sys
+import time
 
 # Data flow block
-chunk_size = 1024
+chunk_size = 2000
 
 # Open the wav file in read-only mode
 wave_file = wave.open('C:\Users\Hatem\Documents\Paul\SonagrammeProject\Scripts_MATLAB\Audio\empreintes_2.wav',"rb")
@@ -33,8 +34,9 @@ data = wave_file.readframes(chunk_size)
 stream.write(data)
 
 # Play
-while len(data) > 0:
-    if i < 60:
+while len(data) > 0 and i < 100:
+    wave_file.setpos(i * 100)
+    if i < 40:
         speed = 0.99
     else:
         speed = 1.02
@@ -43,6 +45,9 @@ while len(data) > 0:
     modified_data = audioop.ratecv(data, width, nb_channels, framerate, new_fr, None)[0]
     stream.write(modified_data)
     i += 1
+    wave_file.rewind()
+    
+    time.sleep(0.05)
 
 # Stop data flow
 stream.stop_stream()

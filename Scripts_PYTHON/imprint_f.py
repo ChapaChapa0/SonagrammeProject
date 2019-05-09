@@ -69,14 +69,17 @@ def compute_imprint_global(base_imprint, m, step, laser_pos):
     return imp_global
 
 
-def compute_position(imp_global, imp, m, step, laser_pos, pre_pos):
-    size_imp = len(imp_global)
+def compute_position(imprint_global, imprint, m, step, laser_pos, pre_pos):
+    size_imp = len(imprint_global)
     score_min = 1000000
     k_min = -1
-    imp_win = imp[laser_pos : laser_pos + m]
-    search_win = 100
-    step = 5
     
+    imp_global = imprint_global.astype(np.int16)
+    imp = imprint.astype(np.int16)
+    imp_win = imp[laser_pos : laser_pos + m]
+
+    search_win = 60
+
     k0 = pre_pos
     if pre_pos + search_win > size_imp - m:
         k1 = size_imp - m
@@ -85,8 +88,7 @@ def compute_position(imp_global, imp, m, step, laser_pos, pre_pos):
     for k in range (k0, k1, step):
         imp_g_win = imp_global[k : k + m]
         mask1 = np.abs(imp_g_win - imp_win)
-        mask2 = np.abs(imp_win - imp_g_win)
-        score = np.mean(mask1) + np.mean(mask2)
+        score = np.mean(mask1)
         if score < score_min:
             score_min = score
             k_min = k
@@ -94,5 +96,6 @@ def compute_position(imp_global, imp, m, step, laser_pos, pre_pos):
         raise Exception('error : k_min not found')
     position = k_min
     return position
+                
         
 

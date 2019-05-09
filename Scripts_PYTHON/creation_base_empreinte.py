@@ -28,8 +28,8 @@ gain = 16
 dis_shift = 0
 
 # Imprint
-window_imp = 60
-step_imp = [10,2]
+window_imp = 80
+step_imp = 2
 
 # INIT
 # Adjust exposure and gain()
