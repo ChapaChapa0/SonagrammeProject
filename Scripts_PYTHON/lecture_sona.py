@@ -25,8 +25,8 @@ sigma = p[4]            # Amount of blur on LS
 threshold = p[5]        # Threshold to compute LS
 laser_position = p[6]
 laser_pos_imp = laser_position - window_h[0]
-delay_time = 0.1        # Time between each iteration
-epsilon_time = 0.02
+delay_time = 0.05        # Time between each iteration
+epsilon_time = 0.005
 
 # Realsense camera parameter
 len_im = p[7]
@@ -35,10 +35,12 @@ exp = p[9]
 gain = p[10]
 dis_shift = p[11]
 
-# Imprint
+# Other parameters
 window_imp = p[12]
-step_imp = p[13]
-imprint_global = p[14]
+#step_imp = p[13]
+step_imp = 1
+search_win = p[14]
+imprint_global = p[15]
 size_imp = len(imprint_global)
 
 # Close parameters file
@@ -69,7 +71,7 @@ for i in range (0,5):
 
 # INIT AUDIO
 # Audio path
-audio_path = repertory + 'empreintes_2.wav'
+audio_path = repertory + 'empreintes_3.wav'
 
 # Open the wav file in read-only mode
 wave_file = wave.open(audio_path,"rb")
@@ -111,7 +113,8 @@ imprint = compute_imprint(depth, window_h, window_w, step_downsample, sigma, thr
 
 # Find imprint position on global imprint
 start_pos = 0
-pos = compute_position(imprint_global, imprint, window_imp, step_imp, laser_pos_imp, start_pos)
+search_win_init = size_imp - window_imp
+pos = compute_position(imprint_global, imprint, window_imp, step_imp, laser_pos_imp, start_pos, search_win_init)
 start_pos = pos
 pre_pos = pos
 
@@ -131,13 +134,12 @@ while (pos < start_pos + epsilon) and (pos > start_pos - epsilon):
         
     # Find imprint position on global imprint
     pre_pos = pos
-    pos = compute_position(imprint_global, imprint, window_imp, step_imp, laser_pos_imp, pre_pos)
+    pos = compute_position(imprint_global, imprint, window_imp, step_imp, laser_pos_imp, pre_pos, search_win)
     
     # Pause
     time.sleep(delay_time)
 
 # LOOP
-pre_pos = 0
 while len(data) > 0:
 
     start = time.time()
@@ -153,10 +155,10 @@ while len(data) > 0:
     imprint = compute_imprint(depth, window_h, window_w, step_downsample, sigma, threshold)
         
     # Find imprint position on global imprint
-    pos = compute_position(imprint_global, imprint, window_imp, step_imp, laser_pos_imp, pre_pos)
-
+    pos = compute_position(imprint_global, imprint, window_imp, step_imp, laser_pos_imp, pre_pos, search_win)
+    
     # Deduce if lecture is over
-    if pos > 200:
+    if pos > 220:
         data = ""
     # Else continue lecture
     else:

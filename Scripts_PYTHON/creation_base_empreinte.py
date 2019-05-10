@@ -27,9 +27,10 @@ exp = 8000
 gain = 16
 dis_shift = 0
 
-# Imprint
+# Other Parameters
 window_imp = 80
 step_imp = 2
+search_win = 100
 
 # INIT
 # Adjust exposure and gain()
@@ -101,8 +102,8 @@ imprint_global = compute_imprint_global(base_imprint, window_imp, step_imp, lase
 pipe.stop()
 
 # Save configuration for lecture
-config = [repertory, window_w, window_h, step_downsample, sigma, threshold, laser_position,
-          len_im, wid_im, exp, gain, dis_shift, window_imp, step_imp, imprint_global, base_imprint]
+config = [repertory, window_w, window_h, step_downsample, sigma, threshold, laser_position, len_im, 
+          wid_im, exp, gain, dis_shift, window_imp, step_imp, search_win, imprint_global, base_imprint]
 f = open("imprint_base", "w")
 pickle.dump(config, f)
 f.close()

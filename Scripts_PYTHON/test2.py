@@ -36,7 +36,8 @@ dis_shift = p[11]
 # Imprint
 window_imp = p[12]
 step_imp = p[13]
-imprint_global = p[14]
+search_win = p[14]
+imprint_global = p[15]
 size_imp = len(imprint_global)
 
 # Close parameters file

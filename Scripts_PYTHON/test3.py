@@ -2,6 +2,7 @@
 import numpy as np                        # fundamental package for scientific computing
 import pickle
 import math
+import time
 from matplotlib import pyplot as plt
 from imprint_f import compute_imprint
 from imprint_f import compute_position
@@ -34,8 +35,8 @@ dis_shift = p[11]
 # Imprint
 window_imp = p[12]
 step_imp = p[13]
-imp_global = p[14]
-base_imp = p[15]
+search_win = p[14]
+imp_global = p[15]
 size_imp = len(imp_global)
 
 # Close parameters file
@@ -52,9 +53,8 @@ base_imp = p
 f.close()
 
 # Compute global imprint
-step0 = 10
-step1 = 2
-step_imp = [10,2]
+step_imp = 2
+pre_pos = 0
 
 #pos = compute_position(imp_global, impC, m, step_imp, laser_pos_imp)
 imp = base_imp[4]
@@ -66,32 +66,11 @@ i_min = -1
 imp_global = imp_global.astype(np.int16)
 imp = imp.astype(np.int16)
 
-imp_win = imp[laser_pos_imp : laser_pos_imp + m]
+start = time.time()
 
-for i in range (0, size_imp - m, step0):
-    imp_g_win = imp_global[i : i + m]
-    mask = np.abs(imp_g_win - imp_win)
-    score = np.mean(mask)
-    if score < score_min:
-        imp_min = imp_g_win
-        mask_min = mask
-        score_min = score
-        i_min = i
-if i_min == -1:
-    raise Exception('error : i_min not found')
-k0 = i_min
-k1 = i_min + step0   
-k_min = i_min
-for k in range (k0,k1,step1):
-    imp_g_win = imp_global[k : k + m]
-    mask = np.abs(imp_g_win - imp_win)
-    score = np.mean(mask)
-    if score < score_min:
-        imp_min = imp_g_win
-        mask_min = mask
-        score_min = score
-        k_min = k
-pos = k_min
+pos = compute_position(imp_global, imp, m, step_imp, laser_pos_imp, pre_pos, search_win)
 
-print(pos)
+end = time.time()
+
+print(end - start)
 

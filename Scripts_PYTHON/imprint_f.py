@@ -16,8 +16,6 @@ def compute_imprint(depth, win_h, win_w, step, sigma, threshold):
 
 #def compute_imprint_global(base_imprint, m, step):
 #    n = len(base_imprint)
-#    step0 = step[0]
-#    step1 = step[1]
 #    if n > 1:
 #        imp0 = base_imprint[0]
 #        for k in range (1,n):
@@ -26,7 +24,7 @@ def compute_imprint(depth, win_h, win_w, step, sigma, threshold):
 #            score_min = 1000000
 #            i_min = -1
 #            imp_win = imp[0 : 2*m]
-#            for i in range (m, size_imp - m, step0):
+#            for i in range (m, size_imp - m, step):
 #                imp0_win = imp0[i - m : i + m]
 #                mask1 = np.abs(imp_win - imp0_win)
 #                mask2 = np.abs(imp0_win - imp_win)
@@ -36,20 +34,7 @@ def compute_imprint(depth, win_h, win_w, step, sigma, threshold):
 #                    i_min = i
 #            if i_min == -1:
 #                raise Exception('error : i_min not found')
-#            k0 = i_min
-#            k1 = i_min + step0
-#            k_min = i_min
-#            for k in range (k0, k1, step1):
-#                imp0_win = imp0[k - m : k + m]
-#                mask1 = np.abs(imp_win - imp0_win)
-#                mask2 = np.abs(imp0_win - imp_win)
-#                score = np.mean(mask1) + np.mean(mask2)
-#                if score < score_min:
-#                    score_min = score
-#                    k_min = k
-#            p = size_imp - (k_min + m)
-#            print(p)
-#            print(k_min)
+#            p = size_imp - (i_min + m)
 #            if p < len(imp) - 2*m:
 #                imp0 = np.concatenate((imp0, imp[p + 2*m : -1]), axis = 0)
 #        imp_global = imp0
@@ -69,7 +54,7 @@ def compute_imprint_global(base_imprint, m, step, laser_pos):
     return imp_global
 
 
-def compute_position(imprint_global, imprint, m, step, laser_pos, pre_pos):
+def compute_position(imprint_global, imprint, m, step, laser_pos, pre_pos, search_win):
     size_imp = len(imprint_global)
     score_min = 1000000
     k_min = -1
@@ -78,13 +63,15 @@ def compute_position(imprint_global, imprint, m, step, laser_pos, pre_pos):
     imp = imprint.astype(np.int16)
     imp_win = imp[laser_pos : laser_pos + m]
 
-    search_win = 60
-
-    k0 = pre_pos
     if pre_pos + search_win > size_imp - m:
         k1 = size_imp - m
     else:
         k1 = pre_pos + search_win
+#    if pre_pos - search_win < m:
+#        k0 = m
+#    else:
+#        k0 = pre_pos - search_win
+    k0 = pre_pos
     for k in range (k0, k1, step):
         imp_g_win = imp_global[k : k + m]
         mask1 = np.abs(imp_g_win - imp_win)
