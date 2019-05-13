@@ -5,7 +5,7 @@ import sys
 import pickle
 from matplotlib import pyplot as plt
 from imprint_f import compute_imprint
-from imprint_f import compute_imprint_global
+from imprint_f import compute_imprint_global_2
 print("Environment Ready")
 
 
@@ -30,7 +30,7 @@ dis_shift = 0
 # Other Parameters
 window_imp = 80
 step_imp = 2
-search_win = 100
+search_win = 50
 
 # INIT
 # Adjust exposure and gain()
@@ -96,7 +96,7 @@ while iteration < 3:
     iteration = iteration + 1
 
 # Calcul imprint global
-imprint_global = compute_imprint_global(base_imprint, window_imp, step_imp, laser_pos_imp)
+imprint_global = compute_imprint_global_2(base_imprint, window_imp, step_imp, laser_pos_imp)
 
 # Close streaming pipe
 pipe.stop()

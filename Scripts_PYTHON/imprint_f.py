@@ -14,33 +14,32 @@ def compute_imprint(depth, win_h, win_w, step, sigma, threshold):
     return imprint_blur
 
 
-#def compute_imprint_global(base_imprint, m, step):
-#    n = len(base_imprint)
-#    if n > 1:
-#        imp0 = base_imprint[0]
-#        for k in range (1,n):
-#            size_imp = len(imp0)
-#            imp = base_imprint[k]
-#            score_min = 1000000
-#            i_min = -1
-#            imp_win = imp[0 : 2*m]
-#            for i in range (m, size_imp - m, step):
-#                imp0_win = imp0[i - m : i + m]
-#                mask1 = np.abs(imp_win - imp0_win)
-#                mask2 = np.abs(imp0_win - imp_win)
-#                score = np.mean(mask1) + np.mean(mask2)
-#                if score < score_min:
-#                    score_min = score
-#                    i_min = i
-#            if i_min == -1:
-#                raise Exception('error : i_min not found')
-#            p = size_imp - (i_min + m)
-#            if p < len(imp) - 2*m:
-#                imp0 = np.concatenate((imp0, imp[p + 2*m : -1]), axis = 0)
-#        imp_global = imp0
-#    else:
-#        imp_global = base_imprint[0]
-#    return imp_global
+def compute_imprint_global_2(base_imprint, m, step, laser_pos):
+    n = len(base_imprint)
+    if n > 1:
+        imp0 = base_imprint[0].astype(np.int16)
+        for k in range (1,n):
+            size_imp = len(imp0)
+            imp = base_imprint[k].astype(np.int16)
+            score_min = 1000000
+            i_min = -1
+            imp_win = imp[0 : 2*m]
+            for i in range (m, size_imp - m, step):
+                imp0_win = imp0[i - m : i + m]
+                mask = np.abs(imp_win - imp0_win)
+                score = np.mean(mask)
+                if score < score_min:
+                    score_min = score
+                    i_min = i
+            if i_min == -1:
+                raise Exception('error : i_min not found')
+            p = size_imp - (i_min + m)
+            if p < len(imp) - 2*m:
+                imp0 = np.concatenate((imp0, imp[p + 2*m : -1]), axis = 0)
+        imp_global = imp0.astype(np.uint16)
+    else:
+        imp_global = base_imprint[0]
+    return imp_global
     
 def compute_imprint_global(base_imprint, m, step, laser_pos):
     n = len(base_imprint)
@@ -67,10 +66,10 @@ def compute_position(imprint_global, imprint, m, step, laser_pos, pre_pos, searc
         k1 = size_imp - m
     else:
         k1 = pre_pos + search_win
-#    if pre_pos - search_win < m:
-#        k0 = m
-#    else:
-#        k0 = pre_pos - search_win
+    if pre_pos - search_win < 0:
+        k0 = 0
+    else:
+        k0 = pre_pos - search_win
     k0 = pre_pos
     for k in range (k0, k1, step):
         imp_g_win = imp_global[k : k + m]

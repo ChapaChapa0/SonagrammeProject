@@ -8,6 +8,7 @@ import audioop
 import sys
 import math
 import pickle
+from matplotlib import pyplot as plt
 from imprint_f import compute_imprint
 from imprint_f import compute_position
 print("Environment Ready")
@@ -25,8 +26,8 @@ sigma = p[4]            # Amount of blur on LS
 threshold = p[5]        # Threshold to compute LS
 laser_position = p[6]
 laser_pos_imp = laser_position - window_h[0]
-delay_time = 0.05        # Time between each iteration
-epsilon_time = 0.005
+delay_time = 0.1        # Time between each iteration
+epsilon_time = 0.01
 
 # Realsense camera parameter
 len_im = p[7]
@@ -140,6 +141,7 @@ while (pos < start_pos + epsilon) and (pos > start_pos - epsilon):
     time.sleep(delay_time)
 
 # LOOP
+reverse = (pos < start_pos)
 while len(data) > 0:
 
     start = time.time()
@@ -158,8 +160,8 @@ while len(data) > 0:
     pos = compute_position(imprint_global, imprint, window_imp, step_imp, laser_pos_imp, pre_pos, search_win)
     
     # Deduce if lecture is over
-    if pos > 220:
-        data = ""
+    if (pos > size_imp - 10 and not reverse) or (pos < 10 and reverse):
+        data = ''
     # Else continue lecture
     else:
         # If same position nothing is readen
@@ -173,17 +175,19 @@ while len(data) > 0:
             # Determine position in lecture
             if pos < pre_pos:
                 # Audio is in reverse if lecture goes backward
-                sound_pos = int(round(pos * time_pixel * framerate - chunk_size))
+                sound_pos = int(round(pre_pos * time_pixel * framerate - chunk_size))
                 if sound_pos < 0:
                     wave_file.setpos(0)
                 else:
                     wave_file.setpos(sound_pos)
                 data = wave_file.readframes(chunk_size)
                 data = audioop.reverse(data, width)
+                reverse = True
             else:
-                sound_pos = int(round(pos * time_pixel * framerate))
+                sound_pos = int(round(pre_pos * time_pixel * framerate))
                 wave_file.setpos(sound_pos)
                 data = wave_file.readframes(chunk_size)
+                reverse = False
         
             # Determine new framerate according to new speed
             new_fr = int(round(framerate / speed))
