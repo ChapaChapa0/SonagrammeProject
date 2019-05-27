@@ -5,7 +5,7 @@ L = taille_ecran(3);
 H = taille_ecran(4);
 
 % Lecture d'un extrait musical :
-[signal,f_echantillonnage] = audioread('C:\Users\Hatem\Documents\Paul\Scripts_MATLAB\Audio\happy.wav');
+[signal,f_echantillonnage] = audioread('C:\Users\Hatem\Documents\Paul\SonagrammeProject\Scripts_MATLAB\Audio\empreintes_2.wav');
 % sound(signal,f_echantillonnage);
 if size(signal,2)==2
 	signal = mean(signal,2);		% Conversion stereo -> mono
@@ -14,7 +14,7 @@ end
 % Calcul de la transformee de Gabor :
 nb_echantillons = length(signal);
 duree = floor(nb_echantillons/f_echantillonnage);
-duree_mesure = 0.2;				% Duree d'une mesure en secondes
+duree_mesure = 0.1;				% Duree d'une mesure en secondes
 nb_mesures = floor(duree/duree_mesure);
 valeurs_t = 0:duree/(nb_mesures-1):duree;
 nb_echantillons_par_mesure = floor(nb_echantillons/nb_mesures);
@@ -47,6 +47,7 @@ gain = 3;
 
 % Compressing the signal with a function which simulate a multiband compressor
 S_comp = OTT(S, min_tresh, max_tresh, ratio, gain);
+S_comp = S;
 
 % Affichage du sonagramme compressé :
 figure('Name','Sonagramme (compressed)','Position',[0,0,0.5*L,0.6*H]);
@@ -90,7 +91,7 @@ S2(k+1:end,:) = S_neg;
 valeurs_f_S_2 = linspace(-f_max,f_max,size(S2,1));
 [t_grid, f_S_grid] = meshgrid(valeurs_t, valeurs_f_S_2);
 
-nb_points = 80; % Definit la 'quantite' d'interpolation du sonagramme
+nb_points = 100; % Definit la 'quantite' d'interpolation du sonagramme
 [xq,yq] = meshgrid(linspace(0,duree,nb_points),linspace(-f_max,f_max,nb_points));
 S3 = interp2(t_grid, f_S_grid,S2,xq,yq);
 

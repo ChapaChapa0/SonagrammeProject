@@ -12,7 +12,7 @@ from matplotlib import pyplot as plt
 from imprint_f import compute_imprint
 from imprint_f import compute_position
 print("Environment Ready")
-    
+
 
 # MAIN
 # Parameters
@@ -26,8 +26,8 @@ sigma = p[4]            # Amount of blur on LS
 threshold = p[5]        # Threshold to compute LS
 laser_position = p[6]
 laser_pos_imp = laser_position - window_h[0]
-delay_time = 0.1        # Time between each iteration
-epsilon_time = 0.01
+delay_time = 0.2        # Time between each iteration
+epsilon_time = 0.05
 
 # Realsense camera parameter
 len_im = p[7]
@@ -40,7 +40,8 @@ dis_shift = p[11]
 window_imp = p[12]
 #step_imp = p[13]
 step_imp = 1
-search_win = p[14]
+#search_win = p[14]
+search_win = 25
 imprint_global = p[15]
 size_imp = len(imprint_global)
 
@@ -142,7 +143,8 @@ while (pos < start_pos + epsilon) and (pos > start_pos - epsilon):
 
 # LOOP
 reverse = (pos < start_pos)
-while len(data) > 0:
+iteration = 0
+while iteration < 50:
 
     start = time.time()
     
@@ -158,55 +160,50 @@ while len(data) > 0:
         
     # Find imprint position on global imprint
     pos = compute_position(imprint_global, imprint, window_imp, step_imp, laser_pos_imp, pre_pos, search_win)
+    print(pos)
     
-    # Deduce if lecture is over
-    if (pos > size_imp - 10 and not reverse) or (pos < 10 and reverse):
-        data = ''
-    # Else continue lecture
+    # If same position same small chunk is readen
+    if pos == pre_pos:
+        speed = 1.0
     else:
-        # If same position nothing is readen
-        if pos == pre_pos:
-            modified_data = ''
-        else:
-            # Determine speed of lecture and chunk_size according to this speed
-            speed = abs(((pre_pos - pos) * time_pixel) / delay_time)
-            chunk_size = int(math.ceil(framerate * delay_time * speed))
-            
-            # Determine position in lecture
-            if pos < pre_pos:
-                # Audio is in reverse if lecture goes backward
-                sound_pos = int(round(pre_pos * time_pixel * framerate - chunk_size))
-                if sound_pos < 0:
-                    wave_file.setpos(0)
-                else:
-                    wave_file.setpos(sound_pos)
-                data = wave_file.readframes(chunk_size)
-                data = audioop.reverse(data, width)
-                reverse = True
-            else:
-                sound_pos = int(round(pre_pos * time_pixel * framerate))
-                wave_file.setpos(sound_pos)
-                data = wave_file.readframes(chunk_size)
-                reverse = False
+        speed = abs(((pos - pre_pos) * time_pixel) / delay_time)
+
+    # Determine chunk_size according to new speed
+    chunk_size = int(math.ceil(framerate * delay_time * speed))
         
-            # Determine new framerate according to new speed
-            new_fr = int(round(framerate / speed))
-            modified_data = audioop.ratecv(data, width, nb_channels, framerate, new_fr, None)[0]
-    
-            # Rewind wave file for next iteration
-            wave_file.rewind()
-    
-        # Sleep before next iteration
-        end = time.time()
-        computing_time = end - start
-        if computing_time < delay_time:
-            time.sleep(delay_time - computing_time - epsilon_time)
+    # Determine position in lecture
+    if pos < pre_pos:
+        # Audio is in reverse if lecture goes backward
+        sound_pos = int(round(pos * time_pixel * framerate - chunk_size))
+        wave_file.setpos(sound_pos)
+        data = wave_file.readframes(chunk_size)
+        data = audioop.reverse(data, width)
+        reverse = True
+    else:
+        sound_pos = int(round(pre_pos * time_pixel * framerate))
+        wave_file.setpos(sound_pos)
+        data = wave_file.readframes(chunk_size)
+        reverse = False
 
-        # Play sound with new framerate
-        stream.write(modified_data)
+    # Determine new framerate according to new speed
+    new_fr = int(round(framerate / speed))
+    modified_data = audioop.ratecv(data, width, nb_channels, framerate, new_fr, None)[0]
 
-        pre_pos = pos
-    
+    # Rewind wave file for next iteration
+    wave_file.rewind()
+
+    # Sleep before next iteration
+    end = time.time()
+    computing_time = end - start
+    if computing_time < delay_time:
+        time.sleep(delay_time - computing_time - epsilon_time)
+
+    # Play sound with new framerate
+    stream.write(modified_data)
+
+    pre_pos = pos
+    iteration += 1
+
 # Stop data flow
 stream.stop_stream()
 stream.close()

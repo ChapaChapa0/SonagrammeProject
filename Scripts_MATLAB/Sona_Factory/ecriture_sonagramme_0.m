@@ -5,7 +5,7 @@ L = taille_ecran(3);
 H = taille_ecran(4);
 
 % Lecture d'un extrait musical :
-[signal,f_echantillonnage] = audioread('C:\Users\Hatem\Documents\Paul\Scripts_MATLAB\Audio\empreintes_8.wav');
+[signal,f_echantillonnage] = audioread('C:\Users\Hatem\Documents\Paul\SonagrammeProject\Scripts_MATLAB\Audio\empreintes_2.wav');
 sound(signal,f_echantillonnage);
 if size(signal,2)==2
 	signal = mean(signal,2);		% Conversion stereo -> mono
@@ -79,7 +79,7 @@ S2(k+1:end,:) = S3;
 % Lissage du sonagramme (interpolation)
 valeurs_f_S = linspace(-f_max,f_max,size(S2,1));
 [t_grid, f_S_grid] = meshgrid(valeurs_t, valeurs_f_S);
-nb_points = 60;
+nb_points = 100;
 [xq,yq] = meshgrid(linspace(0,duree,nb_points),linspace(-f_max,f_max,nb_points));
 S4 = interp2(t_grid, f_S_grid,S2,xq,yq);
 
@@ -94,8 +94,11 @@ S0 = S0 + epaisseur_socle;
 
 figure('Name','Sonagramme imprimable','Position',[0,0,L,0.6*H]);
 trisurf(F,V(:,1),V(:,2),V(:,3));
+xlabel('Time (s)','FontSize',20);
+ylabel('Frequency (Hz)','FontSize',20);
+zlabel('Intensity','FontSize',20)
 
 %% Sauvegarde du fichier stl du sonagramme
-stlwrite('C:\Users\Hatem\Documents\Paul\Scripts_MATLAB\Gen\test.stl',F,V);
+stlwrite('C:\Users\Hatem\Documents\Paul\SonagrammeProject\Scripts_MATLAB\Gen\test.stl',F,V);
 
 save ecriture_sonagramme

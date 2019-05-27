@@ -5,20 +5,20 @@ import sys
 import pickle
 from matplotlib import pyplot as plt
 from imprint_f import compute_imprint
-from imprint_f import compute_imprint_global_2
+from imprint_f import compute_imprint_global
 print("Environment Ready")
 
 
 # MAIN
 # Parameters
 repertory = "C:\\Users\\Hatem\\Documents\\Paul\\SonagrammeProject\\Scripts_PYTHON\\Audio\\"
-window_w = [260,390]
-window_h = [110, 330]
+window_w = [0, 600]
+window_h = [140, 300]
 step_downsample = 2  # Step for downsampling on imprint
 sigma = 5            # Amount of blur on imprint
-threshold = 560      # Threshold to compute imprint
-laser_position = 220
-laser_pos_imp = laser_position - window_h[1]
+threshold = 565      # Threshold to compute imprint
+laser_position = 300
+laser_pos_imp = laser_position - window_w[0]
 
 # Realsense camera parameter
 len_im = 640
@@ -28,9 +28,9 @@ gain = 16
 dis_shift = 0
 
 # Other Parameters
-window_imp = 80
-step_imp = 2
-search_win = 50
+window_imp = 100
+step_imp = 1
+search_win = 25
 
 # INIT
 # Adjust exposure and gain()
@@ -65,7 +65,7 @@ old_i = 0
 nb_frames = 5
 base_imprint = []
 l_color = []
-while iteration < 3:
+while iteration < 5:
 
     raw_input("Press enter...")
     
@@ -79,7 +79,7 @@ while iteration < 3:
 
         # Compute imprint
         imprint = compute_imprint(depth, window_h, window_w, step_downsample, sigma, threshold)
-        
+
         # Compute mean of imprint
         imprint_m += imprint
 
@@ -93,10 +93,10 @@ while iteration < 3:
     color = color[window_h[0] : window_h[1]]
     l_color.append(color)
 
-    iteration = iteration + 1
+    iteration += 1
 
 # Calcul imprint global
-imprint_global = compute_imprint_global_2(base_imprint, window_imp, step_imp, laser_pos_imp)
+imprint_global = compute_imprint_global(base_imprint, window_imp, step_imp, laser_pos_imp)
 
 # Close streaming pipe
 pipe.stop()
